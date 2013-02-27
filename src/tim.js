@@ -13,35 +13,51 @@ window.onload = function () {
 };
 
 var Tim = (function() {
+
+    /**
+     * Initialize Tim
+     * To be called on page load
+     */
     function init()
     {
+        // Init collections
         steps = {};
         boxRefs = {};
 
+        // The table itself
         var seqTable = document.createElement('table');
+        // ID for css reasons
+        // TODO: do this differently
         seqTable.id = 'timseq';
+
+        // The first (indicator) row
         var firstRow = document.createElement('tr');
         firstRow.appendChild(document.createElement('td'));
 
-
         for(var step = 0; step < config.steps; step ++) {
             boxRefs[step] = {};
-            // init steps
+            // Init steps array for each column
             steps[step] = [];
+            // Single grid column, first row
             var rowStep = document.createElement('td');
+            // Yay, filler content
             rowStep.innerHTML = '&nbsp;';
-
             firstRow.appendChild(rowStep);
             indicatorRefs[step] = rowStep;
+
             for (var note = config.bottomNote; note < config.noteRange+config.bottomNote; note++) {
+                // Prefill... with nothing
                 boxRefs[step][note] = null;
             }
         }
 
+        // Adding the first row
         seqTable.appendChild(firstRow);
 
+        // Create all the other columns
         for (var y=config.noteRange; y >= 0; y--) {
             var row = document.createElement('tr');
+            // This is where the "Piano Roll" effect comes in
             if(MIDI.noteToKey[config.bottomNote+y] && MIDI.noteToKey[config.bottomNote+y].match('b')) row.className = 'flat';
 
             var keyName = document.createElement('td');
@@ -52,6 +68,7 @@ var Tim = (function() {
             for (var x= 0; x < config.steps; x++) {
                 var column = document.createElement('td');
 
+                // Wicked onclick magic
                 column.onclick = (function(cX, cY) {
                     return function() {
                         toggleNote(cX + '', cY + '');
@@ -65,6 +82,7 @@ var Tim = (function() {
             seqTable.appendChild(row);
         }
 
+        // And create all the other elements
         var playBtn = document.createElement('input');
         playBtn.type = 'button';
         playBtn.onclick = function() { 
@@ -79,15 +97,17 @@ var Tim = (function() {
         stopBtn.onclick = stop;
         stopBtn.value = 'stahp';
 
-        html = '<input type="text" id="bpm" maxlength="3" size="3"/>bpm';
-        document.getElementById('sequencer').innerHTML = html;
-        document.getElementById('bpm').value = config.bpm;
-        document.body.appendChild(seqTable);
-        document.body.appendChild(playBtn);
-        document.body.appendChild(stopBtn);
+        var seqDiv = document.getElementById('sequencer');
 
+        // Finally, append 'em
+        seqDiv.appendChild(seqTable);
+        seqDiv.appendChild(playBtn);
+        seqDiv.appendChild(stopBtn);
     }
 
+    /**
+     * Play the programmed sequence
+     */
     function play()
     {
         notesToPlay = [];
@@ -108,6 +128,10 @@ var Tim = (function() {
         nextDisplayStep();
     }
 
+    /**
+     * Try desperately to stop playback
+     * TODO: stop being desperate
+     */
     function stop()
     {
         playing = false;
@@ -121,7 +145,10 @@ var Tim = (function() {
         }
     }
 
-    function toggleNote(step, note, fromSocket)
+    /**
+     * Toggle a note on/off on a given step
+     */
+    function toggleNote(step, note)
     {
         removed = false;
         for(var i= 0, j=steps[step].length; i<j; i++) {
@@ -138,11 +165,19 @@ var Tim = (function() {
         boxRefs[step][note].className = removed ? '' : 'selected';
     }
 
+    /**
+     * Shortcut for MIDI.noteOn with default values 0 and 127
+     * TODO: velocity and whatever the first value was again
+     */
     function playNote(note, delay)
     {
         MIDI.noteOn(0, note, 127, delay);
     }
 
+    /**
+     * Clear all the indicator columns in the first row
+     * TODO: Shouldn't be necessary, be more specific
+     */
     function resetDisplaySteps()
     {
         for(var i in indicatorRefs) {
@@ -150,6 +185,9 @@ var Tim = (function() {
         }
     }
 
+    /**
+     * Move the step indicator one step closer (to the edge, and I'm about to BREAK)
+     */
     function nextDisplayStep()
     {
         resetDisplaySteps();
@@ -158,16 +196,43 @@ var Tim = (function() {
         if(currentDisplayStep == config.steps) currentDisplayStep = 0;
     }
 
+    /**
+     * Interval for the step-indicator
+     */
     var stepInterval = null;
+
+    /**
+     * Timeout for re-triggering of play after a bar has played
+     * TODO: Figure out a way to make more consistent with slow BPMs
+     */
     var playTimeout = null;
+
+    /**
+     * This is where the notes are saved
+     */
     var steps = {};
+
+    /**
+     * Collection of DOM references for the step-indicator 
+     */
     var indicatorRefs = {};
+
+    /**
+     * Collection of DOM references for the grid
+     */
     var boxRefs = {};
+
+    /**
+     * Self-explanatory play vars
+     */
     var currentDisplayStep = 0;
     var playing = false;
-    var playRemote = false;
     var notesToPlay = [];
 
+    /**
+     * Global config
+     * TODO: make dynamic inputs which trigger a reload of the grid when applied
+     */
     var config =
     {
         steps: 32,
@@ -176,5 +241,5 @@ var Tim = (function() {
         bpm: 240
     }
 
-    return {"play":play, "playing":playing, "stop":stop, "init": init, "toggleNote": toggleNote}
+    return {"init": init}
 })();
