@@ -4,9 +4,10 @@ table#timseq {
 }
 
 table#timseq tr td {
-    width: 20px;
-    height: 20px;
+    width: 10px;
+    height: 10px;
     border: 2px solid #aaa;
+    font-size:8px;
 }
 
 table#timseq tr.flat td {
